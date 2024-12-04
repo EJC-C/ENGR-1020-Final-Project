@@ -1,0 +1,44 @@
+#include <Stepper.h>
+
+const int stepsPerRevolution = 64;  // Adjust according to your motor's steps per revolution
+
+// Initialize the stepper library for three steppers
+Stepper small_stepper(stepsPerRevolution, 8, 10, 9, 11);
+Stepper small_stepper2(stepsPerRevolution, 3, 5, 4, 6);
+Stepper small_stepper3(stepsPerRevolution, 7, 12, 13, 2); // Third motor
+
+void setup() {
+  // Set the speed of the motors
+  small_stepper.setSpeed(300);    // Set first stepper speed
+  small_stepper2.setSpeed(300);   // Set second stepper speed
+  small_stepper3.setSpeed(300);   // Set third stepper speed
+  
+  pinMode(A2, INPUT_PULLUP);      // Joystick Z-axis button pin
+}
+
+void loop() {
+  int sensorReading = analogRead(A0); // Read value from joystick X-axis
+
+  if (sensorReading < 490) {
+    small_stepper.step(1);         // Step left
+  }
+  if (sensorReading > 540) {
+    small_stepper.step(-1);        // Step right
+  }
+ 
+  int sensorReading2 = analogRead(A1); // Read value from joystick Y-axis
+
+  if (sensorReading2 < 490) {
+    small_stepper2.step(1);        // Step forward
+  }
+  if (sensorReading2 > 540) {
+    small_stepper2.step(-1);       // Step backward
+  }
+  
+  // Check the joystick Z-axis button
+  int zButtonState = digitalRead(A2); // Read button state
+  
+  if (zButtonState == LOW) {        // Button pressed (assuming active LOW)
+    small_stepper3.step(stepsPerRevolution); // Rotate third motor one full revolution
+  }
+}
