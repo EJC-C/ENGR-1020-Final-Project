@@ -1,0 +1,44 @@
+#include <AccelStepper.h>
+
+// Initialize the motors
+AccelStepper motor1(AccelStepper::FULL4WIRE, 2, 4, 3, 5);
+AccelStepper motor2(AccelStepper::FULL4WIRE, 6, 8, 7, 9);
+AccelStepper motor3(AccelStepper::FULL4WIRE, 10, 12, 11, 13);
+
+int zButtonLastState = HIGH;   // Store last button state
+bool motor3Running = false;    // Third motor state
+
+void setup() {
+  motor1.setMaxSpeed(300);
+  motor2.setMaxSpeed(300);
+  motor3.setMaxSpeed(300);
+
+  pinMode(A2, INPUT_PULLUP); // Z-button pin
+}
+
+void loop() {
+  int sensorReading = analogRead(A0); // Read joystick X-axis
+  if (sensorReading < 490) motor1.move(motor1.currentPosition() + 1);
+  if (sensorReading > 540) motor1.move(motor1.currentPosition() - 1);
+
+  int sensorReading2 = analogRead(A1); // Read joystick Y-axis
+  if (sensorReading2 < 490) motor2.move(motor2.currentPosition() + 1);
+  if (sensorReading2 > 540) motor2.move(motor2.currentPosition() - 1);
+
+  // Z-button toggle logic
+  int zButtonState = digitalRead(A2);
+  if (zButtonState == LOW && zButtonLastState == HIGH) {
+    motor3Running = !motor3Running; // Toggle third motor state
+  }
+  zButtonLastState = zButtonState;
+
+  // Control third motor
+  if (motor3Running) {
+    motor3.move(motor3.currentPosition() + 64); // Rotate motor continuously
+  }
+
+  // Run all motors
+  motor1.run();
+  motor2.run();
+  motor3.run();
+}
