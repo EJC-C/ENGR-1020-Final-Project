@@ -1,0 +1,14 @@
+#include <Stepper.h>
+
+const int stepsPerRevolution = 2048; // Steps for one full revolution
+
+Stepper myStepper(stepsPerRevolution, 8,10,9,11);
+
+void setup() {
+  myStepper.setSpeed(8); // Set speed to 8 RPM
+}
+
+void loop() {
+  myStepper.step(stepsPerRevolution); //Rotate one full revolution
+  delay(500); //Pause for 2 seconds
+}
