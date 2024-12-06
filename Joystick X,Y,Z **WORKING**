@@ -1,0 +1,45 @@
+#include <Stepper.h>
+
+const int stepsPerRevolution = 64;
+
+// Initialize stepper library for three steppers
+Stepper small_stepper(stepsPerRevolution, 2, 4, 3, 5);
+Stepper small_stepper2(stepsPerRevolution, 6, 8, 7, 9);
+Stepper small_stepper3(stepsPerRevolution, 10, 12, 11, 13);
+
+int zButtonLastState = HIGH;   // Store last button state
+bool motor3Running = false;    // Third motor state
+unsigned long lastStepTime = 0;
+int stepInterval = 10;         // Step interval in ms
+
+void setup() {
+  // Set motor speeds
+  small_stepper.setSpeed(300);
+  small_stepper2.setSpeed(300);
+  small_stepper3.setSpeed(300);
+  
+  pinMode(A2, INPUT_PULLUP); // Joystick Z-axis button pin
+}
+
+void loop() {
+  int sensorReading = analogRead(A0); // Read joystick X-axis
+  if (sensorReading < 490) small_stepper.step(1);
+  if (sensorReading > 540) small_stepper.step(-1);
+
+  int sensorReading2 = analogRead(A1); // Read joystick Y-axis
+  if (sensorReading2 < 490) small_stepper2.step(1);
+  if (sensorReading2 > 540) small_stepper2.step(-1);
+
+  // Z-button toggle logic
+  int zButtonState = digitalRead(A2);
+  if (zButtonState == LOW && zButtonLastState == HIGH) {
+    motor3Running = !motor3Running; // Toggle third motor state
+  }
+  zButtonLastState = zButtonState;
+
+  // Control the third motor non-blockingly
+  if (motor3Running && millis() - lastStepTime >= stepInterval) {
+    small_stepper3.step(1); // Step the third motor
+    lastStepTime = millis(); // Update last step time
+  }
+}
