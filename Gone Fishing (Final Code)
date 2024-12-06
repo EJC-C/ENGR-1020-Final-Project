@@ -1,0 +1,110 @@
+#include <Stepper.h>
+
+// Constants
+const int stepsPerRevolution = 64;
+
+// Initialize stepper library for three steppers
+Stepper small_stepper(stepsPerRevolution, 2, 4, 3, 5);
+Stepper small_stepper2(stepsPerRevolution, 6, 8, 7, 9);
+Stepper small_stepper3(stepsPerRevolution, 10, 12, 11, 13);
+
+// LED Pins
+const int GreenLED = A5;
+const int YellowLED = A4;
+const int RedLED = A3;
+
+// Z-Button Pin
+const int ZButton = A2;
+
+// Timing Variables
+unsigned long startTime = 0;
+bool sequenceRunning = false;
+
+// Motor and LED States
+bool motor3Running = false;
+int zButtonLastState = HIGH;
+
+void setup() {
+  // Configure motor speeds
+  small_stepper.setSpeed(300);
+  small_stepper2.setSpeed(300);
+  small_stepper3.setSpeed(300);
+
+  // Configure LED pins
+  pinMode(GreenLED, OUTPUT);
+  pinMode(YellowLED, OUTPUT);
+  pinMode(RedLED, OUTPUT);
+
+  // Configure Z-button pin
+  pinMode(ZButton, INPUT_PULLUP);
+}
+
+void loop() {
+  // Read joystick X-axis
+  int sensorReading = analogRead(A0);
+  if (sensorReading < 200) small_stepper.step(1);
+  if (sensorReading > 800) small_stepper.step(-1);
+
+  // Read joystick Y-axis
+  int sensorReading2 = analogRead(A1);
+  if (sensorReading2 < 200) small_stepper2.step(1);
+  if (sensorReading2 > 800) small_stepper2.step(-1);
+
+  // Z-button logic to start the sequence
+  int zButtonState = digitalRead(ZButton);
+  if (zButtonState == LOW && zButtonLastState == HIGH && !sequenceRunning) {
+    sequenceRunning = true;
+    motor3Running = true; // Start motor and LED sequence
+    startTime = millis(); // Record the start time
+  }
+  zButtonLastState = zButtonState;
+
+  // Manage the sequence
+  if (sequenceRunning) {
+    unsigned long elapsedTime = millis() - startTime;
+
+    // Green LED (0–25 seconds: 20s solid, 5s blink)
+    if (elapsedTime <= 25000) {
+      if (elapsedTime <= 20000) {
+        digitalWrite(GreenLED, HIGH); // Solid for 20s
+      } else {
+        digitalWrite(GreenLED, (millis() / 100) % 2); // Blink for 5s (10Hz)
+      }
+      digitalWrite(YellowLED, LOW);
+      digitalWrite(RedLED, LOW);
+    }
+    // Yellow LED (25–50 seconds: 20s solid, 5s blink)
+    else if (elapsedTime <= 50000) {
+      if (elapsedTime <= 45000) {
+        digitalWrite(YellowLED, HIGH); // Solid for 20s
+      } else {
+        digitalWrite(YellowLED, (millis() / 100) % 2); // Blink for 5s (10Hz)
+      }
+      digitalWrite(GreenLED, LOW);
+      digitalWrite(RedLED, LOW);
+    }
+    // Red LED (50–60 seconds: 5s solid, 5s blink)
+    else if (elapsedTime <= 60000) {
+      if (elapsedTime <= 55000) {
+        digitalWrite(RedLED, HIGH); // Solid for 5s
+      } else {
+        digitalWrite(RedLED, (millis() / 100) % 2); // Blink for 5s (10Hz)
+      }
+      digitalWrite(GreenLED, LOW);
+      digitalWrite(YellowLED, LOW);
+    }
+    // Reset to standby after sequence
+    else {
+      digitalWrite(GreenLED, LOW);
+      digitalWrite(YellowLED, LOW);
+      digitalWrite(RedLED, LOW);
+      sequenceRunning = false;
+      motor3Running = false; // Turn off the motor
+    }
+  }
+
+  // Control the third motor (non-blocking)
+  if (motor3Running) {
+    small_stepper3.step(1); // Continuously step the motor
+  }
+}
